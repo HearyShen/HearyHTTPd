@@ -5,46 +5,82 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 
+
+/**
+ * A MainReactor accepts incoming request sockets and put them into a working queue.
+ * @author Heary Shen
+ */
 public class MainReactor implements Runnable{
 
-    public static final int defaultPort = 8080;
-    public static final int defaultBacklog = 50;
-
-    private ServerSocket serverSocket;
-    private int port;
-    private int backlog;
+    private final ServerSocket serverSocket;
+    private final int port;
+    private final int backlog;
     private BlockingQueue<Socket> workingQueue;
 
-    public MainReactor(BlockingQueue<Socket> workingQueue) {
-        this.buildServerSocket(workingQueue, MainReactor.defaultPort, MainReactor.defaultBacklog);
+    /**
+     * Construct a MainReactor instance with a BlockingQueue as workingQueue.
+     */
+    public MainReactor() throws IOException {
+        this.workingQueue = null;
+        this.serverSocket = new ServerSocket(0);
+        this.port = serverSocket.getLocalPort();
+        this.backlog = serverSocket.getReceiveBufferSize();
     }
 
-    public MainReactor(BlockingQueue<Socket> workingQueue, int port) {
-        this.buildServerSocket(workingQueue, port, MainReactor.defaultBacklog);
-    }
-
-    public MainReactor(BlockingQueue<Socket> workingQueue, int port, int backlog) {
-        this.buildServerSocket(workingQueue, port, backlog);
-    }
-
-    public void buildServerSocket(BlockingQueue<Socket> workingQueue, int port, int backlog) {
-        try {
-            this.serverSocket = new ServerSocket(port, backlog);
-        } catch (IOException e) {
-            System.out.println("Failed to bind port " + port + " !");
-            e.printStackTrace();
-        }
+    /**
+     * Construct a MainReactor instance with a BlockingQueue as workingQueue.
+     * @param workingQueue MainReactor accepts request sockets and put them into workingQueue.
+     */
+    public MainReactor(BlockingQueue<Socket> workingQueue) throws IOException {
         this.workingQueue = workingQueue;
-        this.port = port;
-        this.backlog = backlog;
+        this.serverSocket = new ServerSocket(0);
+        this.port = serverSocket.getLocalPort();
+        this.backlog = serverSocket.getReceiveBufferSize();
     }
 
+    /**
+     * Construct a MainReactor instance with a BlockingQueue as workingQueue.
+     * @param workingQueue MainReactor accepts request sockets and put them into workingQueue.
+     * @param port MainReactor is bounded to listening on this port.
+     */
+    public MainReactor(BlockingQueue<Socket> workingQueue, int port) throws IOException {
+        this.workingQueue = workingQueue;
+        this.serverSocket = new ServerSocket(port);
+        this.port = port;
+        this.backlog = serverSocket.getReceiveBufferSize();
+    }
+
+    /**
+     * Construct a MainReactor instance with a BlockingQueue as workingQueue.
+     * @param workingQueue MainReactor accepts request sockets and put them into workingQueue.
+     * @param port MainReactor is binded to listening on this port.
+     * @param backlog requested maximum length of the queue of incoming connections.
+     */
+    public MainReactor(BlockingQueue<Socket> workingQueue, int port, int backlog) throws IOException {
+        this.workingQueue = workingQueue;
+        this.serverSocket = new ServerSocket(port, backlog);
+        this.port = port;
+        this.backlog = serverSocket.getReceiveBufferSize();
+    }
+
+    /**
+     * Set working queue of MainReactor to workingQueue
+     * @param workingQueue MainReactor accepts request sockets and put them into workingQueue.
+     */
+    public void setWorkingQueue(BlockingQueue<Socket> workingQueue) {
+        this.workingQueue = workingQueue;
+    }
+
+    /**
+     * Override method of Runnable interface
+     */
     @Override
     public void run() {
         while (true) {
             try {
                 Socket socket =  this.serverSocket.accept();
                 this.workingQueue.put(socket);
+//                System.out.println("MainReactor: received a request.");
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
