@@ -22,7 +22,7 @@ public class ContentTypeDict {
         contentTypeDict.put(".js", "application/x-javascript");
         contentTypeDict.put(".pdf", "application/pdf");
         contentTypeDict.put(".png", "image/png");
-        contentTypeDict.put(".svg", "text/xml");
+        contentTypeDict.put(".svg", "image/svg+xml");
         contentTypeDict.put(".tif", "image/tiff");
         contentTypeDict.put(".tiff", "image/tiff");
         contentTypeDict.put(".txt", "text/plain");
