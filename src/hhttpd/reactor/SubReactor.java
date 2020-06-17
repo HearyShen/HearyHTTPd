@@ -11,13 +11,15 @@ import java.util.concurrent.BlockingQueue;
  */
 public class SubReactor implements Runnable{
 
+    private int id;
     private BlockingQueue<Socket> workingQueue;
     private String webRoot;
 
     /**
      * Construct a SubReactor instance.
      */
-    public SubReactor() {
+    public SubReactor(int id) {
+        this.id = id;
         this.workingQueue = null;
         this.webRoot = ".";
     }
@@ -26,7 +28,8 @@ public class SubReactor implements Runnable{
      * Construct a SubReactor instance with a working queue.
      * @param workingQueue SubReactor handles accepted request sockets in workingQueue
      */
-    public SubReactor(BlockingQueue<Socket> workingQueue) {
+    public SubReactor(int id, BlockingQueue<Socket> workingQueue) {
+        this.id = id;
         this.workingQueue = workingQueue;
     }
 
@@ -35,7 +38,8 @@ public class SubReactor implements Runnable{
      * @param workingQueue SubReactor handles accepted request sockets in workingQueue
      * @param webRoot root path of web directory
      */
-    public SubReactor(BlockingQueue<Socket> workingQueue, String webRoot) {
+    public SubReactor(int id, BlockingQueue<Socket> workingQueue, String webRoot) {
+        this.id = id;
         this.workingQueue = workingQueue;
         this.webRoot = webRoot;
     }
@@ -44,7 +48,8 @@ public class SubReactor implements Runnable{
      * Set the SubReactor's workingQueue.
      * @param workingQueue SubReactor handles accepted request sockets in workingQueue
      */
-    public void setWorkingQueue(BlockingQueue<Socket> workingQueue) {
+    public void setWorkingQueue(int id, BlockingQueue<Socket> workingQueue) {
+        this.id = id;
         this.workingQueue = workingQueue;
     }
 
@@ -53,10 +58,10 @@ public class SubReactor implements Runnable{
      */
     @Override
     public void run() {
+        System.out.println("Running SubReactor-" + this.id + " thread");
         while (true) {
             try {
                 Socket socket = this.workingQueue.take();   // blocks when working queue is empty
-                // TODO: handle the incomming socket
                 GetProcessor.handle(this.webRoot, socket.getInputStream(), socket.getOutputStream());
             } catch (InterruptedException | IOException e) {
                 e.printStackTrace();
@@ -64,5 +69,7 @@ public class SubReactor implements Runnable{
         }
     }
 
-
+    public int getId() {
+        return id;
+    }
 }
