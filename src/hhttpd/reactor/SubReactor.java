@@ -1,11 +1,9 @@
 package hhttpd.reactor;
 
-import hhttpd.resolver.DemoResolver;
-import hhttpd.resolver.GetResolver;
+import hhttpd.processor.GetProcessor;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.BlockingQueue;
 
 /**
@@ -59,8 +57,7 @@ public class SubReactor implements Runnable{
             try {
                 Socket socket = this.workingQueue.take();   // blocks when working queue is empty
                 // TODO: handle the incomming socket
-                GetResolver.resolve(this.webRoot, socket.getInputStream(), socket.getOutputStream());
-//                DemoResolver.handle(socket.getInputStream(), socket.getOutputStream());
+                GetProcessor.handle(this.webRoot, socket.getInputStream(), socket.getOutputStream());
             } catch (InterruptedException | IOException e) {
                 e.printStackTrace();
             }

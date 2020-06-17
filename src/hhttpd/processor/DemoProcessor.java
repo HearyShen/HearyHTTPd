@@ -1,9 +1,9 @@
-package hhttpd.resolver;
+package hhttpd.processor;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
-public class DemoResolver {
+public class DemoProcessor {
     public static void handle(InputStream input, OutputStream output) throws IOException {
         System.out.println("Process new http request...");
         var reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
