@@ -8,8 +8,22 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Set;
+
+/*
+[Server] started listening
+[Server] selected acceptable socket
+[Server] selected readable socket
+[Server] starts reading
+Client: 'Hello!'
+[Server] finished reading
+[Server] selected writable socket
+[Server] starts writing
+[Server] finished writing
+[Server] closed writable socket
+*/
 
 public class NIOServer {
 
@@ -25,32 +39,46 @@ public class NIOServer {
         InetSocketAddress address = new InetSocketAddress("127.0.0.1", 8888);
         serverSocket.bind(address);
 
-        while (true) {
+        System.out.println("[Server] started listening");
 
+        while (true) {
+            // selector blocks until at least one channel is selected
             selector.select();
-            Set<SelectionKey> keys = selector.selectedKeys();
-            Iterator<SelectionKey> keyIterator = keys.iterator();
+            Set<SelectionKey> selectionKeys = selector.selectedKeys();
+            Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
 
             while (keyIterator.hasNext()) {
+                SelectionKey selectionKey = keyIterator.next();
 
-                SelectionKey key = keyIterator.next();
+                if (selectionKey.isAcceptable()) {
+                    System.out.println("[Server] selected acceptable socket");
+                    ServerSocketChannel serverSocketChannel = (ServerSocketChannel) selectionKey.channel();
 
-                if (key.isAcceptable()) {
+                    // create a SocketChannel for accepted request socket
+                    SocketChannel socketChannel = serverSocketChannel.accept();
+                    socketChannel.configureBlocking(false);     // configure as non-blocking
 
-                    ServerSocketChannel ssChannel1 = (ServerSocketChannel) key.channel();
+                    // register the socketChannel
+                    socketChannel.register(selector, SelectionKey.OP_READ);
+                } else if (selectionKey.isReadable()) {
+                    System.out.println("[Server] selected readable socket");
+                    SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
 
-                    // 服务器会为每个新连接创建一个 SocketChannel
-                    SocketChannel sChannel = ssChannel1.accept();
-                    sChannel.configureBlocking(false);
+                    System.out.println("[Server] starts reading");
+                    System.out.println(readDataFromSocketChannel(socketChannel));
+                    System.out.println("[Server] finished reading");
 
-                    // 这个新连接主要用于从客户端读取数据
-                    sChannel.register(selector, SelectionKey.OP_READ);
+                    socketChannel.register(selector, SelectionKey.OP_WRITE);
+                } else if (selectionKey.isWritable()) {
+                    System.out.println("[Server] selected writable socket");
+                    SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
 
-                } else if (key.isReadable()) {
+                    System.out.println("[Server] starts writing");
+                    writeDataToSocketChannel(socketChannel);
+                    System.out.println("[Server] finished writing");
 
-                    SocketChannel sChannel = (SocketChannel) key.channel();
-                    System.out.println(readDataFromSocketChannel(sChannel));
-                    sChannel.close();
+                    socketChannel.close();
+                    System.out.println("[Server] closed writable socket");
                 }
 
                 keyIterator.remove();
@@ -58,15 +86,13 @@ public class NIOServer {
         }
     }
 
-    private static String readDataFromSocketChannel(SocketChannel sChannel) throws IOException {
-
+    private static String readDataFromSocketChannel(SocketChannel socketChannel) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(1024);
-        StringBuilder data = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
 
         while (true) {
-
             buffer.clear();
-            int n = sChannel.read(buffer);
+            int n = socketChannel.read(buffer);
             if (n == -1) {
                 break;
             }
@@ -76,9 +102,19 @@ public class NIOServer {
             for (int i = 0; i < limit; i++) {
                 dst[i] = (char) buffer.get(i);
             }
-            data.append(dst);
+            stringBuilder.append(dst);
             buffer.clear();
         }
-        return data.toString();
+        return stringBuilder.toString();
+    }
+
+    private static void writeDataToSocketChannel(SocketChannel sChannel) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        buffer.clear();
+        String s = "Server: 'Have a nice day!'";
+        buffer.put(s.getBytes(StandardCharsets.UTF_8));     // write to buffer
+        buffer.flip();          // flip buffer's mode from 'write' to 'read'
+        sChannel.write(buffer); // read from buffer, write to channel
+        buffer.clear();
     }
 }
