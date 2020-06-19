@@ -4,9 +4,6 @@ import hhttpd.reactor.MainReactor;
 import hhttpd.reactor.SubReactor;
 
 import java.io.IOException;
-import java.net.Socket;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 /**
  * Launcher of HearyHTTPd server.
@@ -14,30 +11,24 @@ import java.util.concurrent.BlockingQueue;
  */
 public class Launcher {
 
-    public static final int defaultWorkingQueueCapacity = 100;
+    public static final int defaultBacklog = 100;
 
-    private final BlockingQueue<Socket> workingQueue;
     private final MainReactor mainReactor;
-    private final SubReactor[] subReactors;
+    private final SubReactor subReactor;
 
     /**
      * Construct the launcher of HearyHTTPd server.
      * @throws IOException if MainReactor can not be constructed.
      */
-    public Launcher(int subReactorCount, String webRoot) throws IOException {
-        // create working queue
-        this.workingQueue = new ArrayBlockingQueue<>(Launcher.defaultWorkingQueueCapacity);
-        System.out.println("Constructed working queue of capacity " + Launcher.defaultWorkingQueueCapacity);
-
+    public Launcher(String webRoot) throws IOException {
         // construct MainReactor
-        this.mainReactor = new MainReactor(this.workingQueue, 8080);
+        this.mainReactor = new MainReactor("127.0.0.1", 8080, defaultBacklog);
         System.out.println("MainReactor is configured to listen on port: " + this.mainReactor.getPort());
 
         // construct SubReactor
-        this.subReactors = new SubReactor[subReactorCount];
-        for (int i=0; i<subReactorCount; i++) {
-            this.subReactors[i] = new SubReactor(i, this.workingQueue, webRoot);
-        }
+        this.subReactor = new SubReactor(webRoot);
+
+        this.mainReactor.setSubReactor(this.subReactor);
     }
 
     /**
@@ -50,20 +41,14 @@ public class Launcher {
         System.out.println("MainReactor has been started as a thread.");
 
         // start SubReactor as a thread
-        Thread[] subReactorThreads = new Thread[this.subReactors.length];
-        for (int i=0; i<this.subReactors.length; i++) {
-            Thread subReactorThread = new Thread(this.subReactors[i]);
-            subReactorThreads[i] = subReactorThread;
-            subReactorThread.start();
-        }
-        System.out.println("SubReactor(s) have been started as thread(s).");
+        Thread subReactorThread = new Thread(this.subReactor);
+        subReactorThread.start();
+        System.out.println("SubReactor has been started as a thread.");
 
         // fork-join for reactor threads
         try {
             mainReactorThread.join();
-            for (Thread subReactorThread : subReactorThreads) {
-                subReactorThread.join();
-            }
+            subReactorThread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -72,7 +57,7 @@ public class Launcher {
     public static void main(String[] args) {
         System.out.println("Launching HearyHTTPD server!");
         try {
-            Launcher launcher = new Launcher(8, "D:\\myHexo\\public");
+            Launcher launcher = new Launcher("D:\\myHexo\\public");
             launcher.launch();
             System.out.println("HearyHTTPD server is successfully launched!");
         } catch (IOException e) {

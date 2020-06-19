@@ -1,56 +1,44 @@
 package hhttpd.reactor;
 
-import hhttpd.processor.GetProcessor;
+import hhttpd.worker.HttpWorker;
 
-import java.io.*;
-import java.net.Socket;
-import java.util.concurrent.BlockingQueue;
+import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * A SubReactor take accepted request sockets from working queue and handle them.
  */
 public class SubReactor implements Runnable{
 
-    private int id;
-    private BlockingQueue<Socket> workingQueue;
-    private String webRoot;
+    private final Selector selector;
+    private final ExecutorService executorService;
+    private final String webRoot;
 
-    /**
-     * Construct a SubReactor instance.
-     */
-    public SubReactor(int id) {
-        this.id = id;
-        this.workingQueue = null;
-        this.webRoot = ".";
-    }
-
-    /**
-     * Construct a SubReactor instance with a working queue.
-     * @param workingQueue SubReactor handles accepted request sockets in workingQueue
-     */
-    public SubReactor(int id, BlockingQueue<Socket> workingQueue) {
-        this.id = id;
-        this.workingQueue = workingQueue;
-    }
-
-    /**
-     * Construct a SubReactor instance with a working queue.
-     * @param workingQueue SubReactor handles accepted request sockets in workingQueue
-     * @param webRoot root path of web directory
-     */
-    public SubReactor(int id, BlockingQueue<Socket> workingQueue, String webRoot) {
-        this.id = id;
-        this.workingQueue = workingQueue;
+    public SubReactor(String webRoot) throws IOException {
+        this.selector = Selector.open();
+        this.executorService = Executors.newCachedThreadPool();
         this.webRoot = webRoot;
     }
 
-    /**
-     * Set the SubReactor's workingQueue.
-     * @param workingQueue SubReactor handles accepted request sockets in workingQueue
-     */
-    public void setWorkingQueue(int id, BlockingQueue<Socket> workingQueue) {
-        this.id = id;
-        this.workingQueue = workingQueue;
+    public void putRequest(SocketChannel socketChannel) {
+        try {
+            socketChannel.register(this.selector, SelectionKey.OP_READ);    // socketChannel is always Writable
+            // socketChannel.register(this.selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+//            this.selector.wakeup();
+        } catch (ClosedChannelException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void wakeUp() {
+        this.selector.wakeup();
     }
 
     /**
@@ -58,18 +46,33 @@ public class SubReactor implements Runnable{
      */
     @Override
     public void run() {
-        System.out.println("Running SubReactor-" + this.id + " thread");
         while (true) {
             try {
-                Socket socket = this.workingQueue.take();   // blocks when working queue is empty
-                GetProcessor.handle(this.webRoot, socket.getInputStream(), socket.getOutputStream());
-            } catch (InterruptedException | IOException e) {
+//                System.out.println("SubReactor: selecting socketChannels");
+                this.selector.select();
+
+                Set<SelectionKey> selectionKeySet = this.selector.selectedKeys();
+                Iterator<SelectionKey> selectionKeys = selectionKeySet.iterator();
+
+                while (selectionKeys.hasNext()) {
+                    SelectionKey selectionKey = selectionKeys.next();
+
+                    if (selectionKey.isReadable()) {
+                        selectionKey.cancel();      // avoid repeating selecting the same channel
+                        SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
+//                        System.out.println("SubReactor: selected readable socketChannel from " + socketChannel.getRemoteAddress());
+
+                        HttpWorker httpWorker = new HttpWorker(webRoot, socketChannel);
+                        this.executorService.submit(httpWorker);
+//                        System.out.println("SubReactor: submitted HttpWorker for " + socketChannel.getRemoteAddress());
+                    }
+
+                    selectionKeys.remove();
+                }
+
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-    }
-
-    public int getId() {
-        return id;
     }
 }

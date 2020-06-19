@@ -1,8 +1,15 @@
 package hhttpd.reactor;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 
 
@@ -12,63 +19,54 @@ import java.util.concurrent.BlockingQueue;
  */
 public class MainReactor implements Runnable{
 
-    private final ServerSocket serverSocket;
+    private final Selector selector;
+
+    private final ServerSocketChannel serverSocketChannel;
+    private final String host;
     private final int port;
     private final int backlog;
-    private BlockingQueue<Socket> workingQueue;
 
-    /**
-     * Construct a MainReactor instance with a BlockingQueue as workingQueue.
-     */
-    public MainReactor() throws IOException {
-        this.workingQueue = null;
-        this.serverSocket = new ServerSocket(0);
-        this.port = serverSocket.getLocalPort();
-        this.backlog = serverSocket.getReceiveBufferSize();
-    }
+    private SubReactor subReactor;
 
-    /**
-     * Construct a MainReactor instance with a BlockingQueue as workingQueue.
-     * @param workingQueue MainReactor accepts request sockets and put them into workingQueue.
-     */
-    public MainReactor(BlockingQueue<Socket> workingQueue) throws IOException {
-        this.workingQueue = workingQueue;
-        this.serverSocket = new ServerSocket(0);
-        this.port = serverSocket.getLocalPort();
-        this.backlog = serverSocket.getReceiveBufferSize();
-    }
-
-    /**
-     * Construct a MainReactor instance with a BlockingQueue as workingQueue.
-     * @param workingQueue MainReactor accepts request sockets and put them into workingQueue.
-     * @param port MainReactor is bounded to listening on this port.
-     */
-    public MainReactor(BlockingQueue<Socket> workingQueue, int port) throws IOException {
-        this.workingQueue = workingQueue;
-        this.serverSocket = new ServerSocket(port);
+    public MainReactor(String host, int port, int backlog) throws IOException {
+        this.host = host;
         this.port = port;
-        this.backlog = serverSocket.getReceiveBufferSize();
+        this.backlog = backlog;
+
+        this.selector = Selector.open();
+
+        this.serverSocketChannel = ServerSocketChannel.open();
+        this.serverSocketChannel.configureBlocking(false);  // non-blocking
+        this.serverSocketChannel.register(this.selector, SelectionKey.OP_ACCEPT);
+
+        ServerSocket serverSocket = serverSocketChannel.socket();
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(this.host, this.port);
+//        this.serverSocketChannel.bind(inetSocketAddress, backlog);
+        serverSocket.bind(inetSocketAddress, backlog);
     }
 
-    /**
-     * Construct a MainReactor instance with a BlockingQueue as workingQueue.
-     * @param workingQueue MainReactor accepts request sockets and put them into workingQueue.
-     * @param port MainReactor is binded to listening on this port.
-     * @param backlog requested maximum length of the queue of incoming connections.
-     */
-    public MainReactor(BlockingQueue<Socket> workingQueue, int port, int backlog) throws IOException {
-        this.workingQueue = workingQueue;
-        this.serverSocket = new ServerSocket(port, backlog);
-        this.port = port;
-        this.backlog = serverSocket.getReceiveBufferSize();
+    public ServerSocketChannel getServerSocketChannel() {
+        return serverSocketChannel;
     }
 
-    /**
-     * Set working queue of MainReactor to workingQueue
-     * @param workingQueue MainReactor accepts request sockets and put them into workingQueue.
-     */
-    public void setWorkingQueue(BlockingQueue<Socket> workingQueue) {
-        this.workingQueue = workingQueue;
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public int getBacklog() {
+        return backlog;
+    }
+
+    public SubReactor getSubReactor() {
+        return subReactor;
+    }
+
+    public void setSubReactor(SubReactor subReactor) {
+        this.subReactor = subReactor;
     }
 
     /**
@@ -78,20 +76,30 @@ public class MainReactor implements Runnable{
     public void run() {
         while (true) {
             try {
-                Socket socket =  this.serverSocket.accept();
-                this.workingQueue.put(socket);
-//                System.out.println("MainReactor: received a request.");
-            } catch (IOException | InterruptedException e) {
+                this.selector.select();
+
+                Set<SelectionKey> selectionKeySet = this.selector.selectedKeys();
+                Iterator<SelectionKey> selectionKeys = selectionKeySet.iterator();
+
+                while (selectionKeys.hasNext()) {
+                    SelectionKey selectionKey = selectionKeys.next();
+
+                    if (selectionKey.isAcceptable()) {
+                        ServerSocketChannel serverSocketChannel = (ServerSocketChannel) selectionKey.channel();
+                        SocketChannel socketChannel = serverSocketChannel.accept();
+                        socketChannel.configureBlocking(false);     // non-blocking
+//                        System.out.println("MainReactor: selected acceptable socketChannel from " + socketChannel.getRemoteAddress());
+                        this.subReactor.putRequest(socketChannel);  // put request socketChannel to subReactor
+//                        System.out.println("MainReactor: accepted socketChannel has been put to SubReactor");
+                    }
+
+                    selectionKeys.remove();
+                }
+                subReactor.wakeUp();
+
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public int getBacklog() {
-        return backlog;
     }
 }

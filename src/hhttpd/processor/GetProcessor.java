@@ -9,6 +9,8 @@ import hhttpd.responser.TextResponser;
 import hhttpd.utils.ContentTypeDict;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Map;
@@ -37,12 +39,40 @@ public class GetProcessor {
             String contentType = ContentTypeDict.getContentType(localFile.getName());
 
             if (contentType.startsWith("text/")) {
-                TextResponser.response(localFile, outputStream);
+                TextResponser.response(outputStream, localFile);
             } else {
-                BinaryResponser.response(localFile, outputStream);
+                BinaryResponser.response(outputStream, localFile);
             }
         } else {
             NotFoundResponser.response(outputStream);
+        }
+    }
+
+    public static void handle(String webRoot,
+                              SocketChannel socketChannel,
+                              ByteBuffer byteBuffer,
+                              String message,
+                              RequestLine requestLine) throws IOException {
+        File localFile = Path.of(webRoot, requestLine.getPath()).toFile();
+
+        if (localFile.isDirectory()) {
+            // request index.html as default
+            localFile = Path.of(webRoot, requestLine.getPath(), "index.html").toFile();
+        }
+
+        if (localFile.isFile()) {
+            String contentType = ContentTypeDict.getContentType(localFile.getName());
+            // if file exists
+            if (contentType.startsWith("text/")) {
+                // text file
+                TextResponser.response(socketChannel, byteBuffer, localFile);
+            } else {
+                // binary data file
+                BinaryResponser.response(socketChannel, byteBuffer, localFile);
+            }
+        } else {
+            // if file not exists
+            NotFoundResponser.response(socketChannel, byteBuffer);
         }
     }
 }
