@@ -7,9 +7,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 
 public class BinaryResponser {
 
@@ -35,15 +36,22 @@ public class BinaryResponser {
     }
 
     public static void response(SocketChannel socketChannel, ByteBuffer byteBuffer, File localFile) throws IOException {
-        byte[] bytes = Files.readAllBytes(localFile.toPath());
+        try (FileChannel fileChannel = FileChannel.open(localFile.toPath())) {
+            // response header
+            String responseHeader = "HTTP/1.0 200 OK\r\n"
+                    + "Connection: close\r\n"
+                    + "Content-Type: " + ContentTypeDict.getContentType(localFile.getName()) + "\r\n"
+                    + "Content-Length: " + fileChannel.size() + "\r\n"
+                    + "\r\n";
 
-        String responseHeader = "HTTP/1.0 200 OK\r\n"
-                + "Connection: close\r\n"
-                + "Content-Type: " + ContentTypeDict.getContentType(localFile.getName()) + "\r\n"
-                + "Content-Length: " + bytes.length + "\r\n"
-                + "\r\n";
+            BytesResponser.response(socketChannel, byteBuffer, responseHeader.getBytes(StandardCharsets.UTF_8));
 
-        BytesResponser.response(socketChannel, byteBuffer, responseHeader.getBytes(StandardCharsets.UTF_8));
-        BytesResponser.response(socketChannel, byteBuffer, bytes);
+            // response content
+//            long tic = System.currentTimeMillis();
+            MappedByteBuffer mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
+            socketChannel.write(mappedByteBuffer);
+//            long toc = System.currentTimeMillis();
+//            System.out.println("response " + localFile.getCanonicalPath() + " in " + (toc-tic) + " ms");
+        }
     }
 }

@@ -52,12 +52,12 @@ public class HttpWorker implements Runnable{
                 break;
             }
         }
-        // close TCP input after reading
-        try {
-            socketChannel.shutdownInput();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        // close TCP input after reading
+//        try {
+//            socketChannel.shutdownInput();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
         // get request message
         String requestMessage = stringBuilder.toString();
 //        try {
