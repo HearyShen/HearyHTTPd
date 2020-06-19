@@ -26,6 +26,7 @@ public class HttpWorker implements Runnable{
 
     @Override
     public void run() {
+        long tic = System.currentTimeMillis();
 //        try {
 //            System.out.println("HttpWorker [" + this.id + "]: starts working on socketChannel from " + socketChannel.getRemoteAddress());
 //        } catch (IOException e) {
@@ -70,11 +71,6 @@ public class HttpWorker implements Runnable{
         int requestLineEnd = requestMessage.indexOf("\r\n");
         RequestLine requestLine = RequestLineResolver.resolve(requestMessage.substring(0, requestLineEnd));
         try {
-            // status
-            System.out.println("HttpWorker: "
-                    + requestLine.getMethod() + " " + requestLine.getPath() + " " + requestLine.getProtocolAndVersion()
-                    + " from " + socketChannel.getRemoteAddress()
-            );
             if (requestLine.getMethod().equals("GET") && requestLine.getProtocolAndVersion().startsWith("HTTP/1.")) {
                 // HTTP GET
                 GetProcessor.handle(webRoot, socketChannel, byteBuffer, requestMessage, requestLine);
@@ -82,6 +78,14 @@ public class HttpWorker implements Runnable{
                 // not supported
                 ForbiddenResponser.response(socketChannel, byteBuffer);
             }
+
+            long toc = System.currentTimeMillis();
+            // status
+            System.out.println("HttpWorker: completed "
+                    + requestLine.getMethod() + " " + requestLine.getPath() + " " + requestLine.getProtocolAndVersion()
+                    + " from " + socketChannel.getRemoteAddress()
+                    + " in " + (toc-tic) + " ms, " + toc
+            );
 
             // close socket channel after responding
 //            System.out.println("HttpWorker [" + this.id + "]: finished responsing requests from " + socketChannel.getRemoteAddress());

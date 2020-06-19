@@ -39,10 +39,10 @@ public class MainReactor implements Runnable{
         this.serverSocketChannel.configureBlocking(false);  // non-blocking
         this.serverSocketChannel.register(this.selector, SelectionKey.OP_ACCEPT);
 
-        ServerSocket serverSocket = serverSocketChannel.socket();
+//        ServerSocket serverSocket = serverSocketChannel.socket();
         InetSocketAddress inetSocketAddress = new InetSocketAddress(this.host, this.port);
-//        this.serverSocketChannel.bind(inetSocketAddress, backlog);
-        serverSocket.bind(inetSocketAddress, backlog);
+        this.serverSocketChannel.bind(inetSocketAddress, backlog);
+//        serverSocket.bind(inetSocketAddress, backlog);
     }
 
     public ServerSocketChannel getServerSocketChannel() {
@@ -77,6 +77,7 @@ public class MainReactor implements Runnable{
         while (true) {
             try {
                 this.selector.select();
+                System.out.println("MainReactor: selected at " + System.currentTimeMillis());
 
                 Set<SelectionKey> selectionKeySet = this.selector.selectedKeys();
                 Iterator<SelectionKey> selectionKeys = selectionKeySet.iterator();
@@ -85,17 +86,20 @@ public class MainReactor implements Runnable{
                     SelectionKey selectionKey = selectionKeys.next();
 
                     if (selectionKey.isAcceptable()) {
+                        long tic = System.currentTimeMillis();
                         ServerSocketChannel serverSocketChannel = (ServerSocketChannel) selectionKey.channel();
                         SocketChannel socketChannel = serverSocketChannel.accept();
                         socketChannel.configureBlocking(false);     // non-blocking
 //                        System.out.println("MainReactor: selected acceptable socketChannel from " + socketChannel.getRemoteAddress());
                         this.subReactor.putRequest(socketChannel);  // put request socketChannel to subReactor
 //                        System.out.println("MainReactor: accepted socketChannel has been put to SubReactor");
+                        long toc = System.currentTimeMillis();
+                        System.out.println("MainReactor: request accepted in " + (toc-tic) + " ms, " + toc);
                     }
 
                     selectionKeys.remove();
                 }
-                subReactor.wakeUp();
+//                subReactor.wakeUp();
 
             } catch (IOException e) {
                 e.printStackTrace();
