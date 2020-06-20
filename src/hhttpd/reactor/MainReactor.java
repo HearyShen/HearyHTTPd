@@ -41,7 +41,7 @@ public class MainReactor implements Runnable{
 
 //        ServerSocket serverSocket = serverSocketChannel.socket();
         InetSocketAddress inetSocketAddress = new InetSocketAddress(this.host, this.port);
-        this.serverSocketChannel.bind(inetSocketAddress, backlog);
+        this.serverSocketChannel.bind(inetSocketAddress, this.backlog);
 //        serverSocket.bind(inetSocketAddress, backlog);
     }
 
@@ -77,7 +77,6 @@ public class MainReactor implements Runnable{
         while (true) {
             try {
                 this.selector.select();
-                System.out.println("MainReactor: selected at " + System.currentTimeMillis());
 
                 Set<SelectionKey> selectionKeySet = this.selector.selectedKeys();
                 Iterator<SelectionKey> selectionKeys = selectionKeySet.iterator();
@@ -90,11 +89,11 @@ public class MainReactor implements Runnable{
                         ServerSocketChannel serverSocketChannel = (ServerSocketChannel) selectionKey.channel();
                         SocketChannel socketChannel = serverSocketChannel.accept();
                         socketChannel.configureBlocking(false);     // non-blocking
-//                        System.out.println("MainReactor: selected acceptable socketChannel from " + socketChannel.getRemoteAddress());
                         this.subReactor.putRequest(socketChannel);  // put request socketChannel to subReactor
 //                        System.out.println("MainReactor: accepted socketChannel has been put to SubReactor");
                         long toc = System.currentTimeMillis();
-                        System.out.println("MainReactor: request accepted in " + (toc-tic) + " ms, " + toc);
+//                        System.out.println("MainReactor: request from " + socketChannel.getRemoteAddress()
+//                                + " accepted in " + (toc-tic) + " ms, at " + toc);
                     }
 
                     selectionKeys.remove();

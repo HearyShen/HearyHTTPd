@@ -22,8 +22,9 @@ public class Launcher {
      */
     public Launcher(String webRoot) throws IOException {
         // construct MainReactor
-        this.mainReactor = new MainReactor("127.0.0.1", 8080, defaultBacklog);
-        System.out.println("MainReactor is configured to listen on port: " + this.mainReactor.getPort());
+        this.mainReactor = new MainReactor("localhost", 8080, defaultBacklog);
+        System.out.println("MainReactor is configured to listen on: '" + this.mainReactor.getHost() + ":"+ this.mainReactor.getPort() + "'"
+                + " with backlog: " + this.mainReactor.getBacklog());
 
         // construct SubReactor
         this.subReactor = new SubReactor(webRoot);

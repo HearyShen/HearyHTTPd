@@ -58,16 +58,14 @@ public class SubReactor implements Runnable{
                     SelectionKey selectionKey = selectionKeys.next();
 
                     if (selectionKey.isReadable()) {
-                        long tic = System.currentTimeMillis();
                         selectionKey.cancel();      // avoid repeating selecting the same channel
                         SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
-//                        System.out.println("SubReactor: selected readable socketChannel from " + socketChannel.getRemoteAddress());
+//                        System.out.println("SubReactor: selected readable socketChannel from " + socketChannel.getRemoteAddress()
+//                                + " at " + System.currentTimeMillis());
 
                         HttpWorker httpWorker = new HttpWorker(webRoot, socketChannel);
                         this.executorService.submit(httpWorker);
 //                        System.out.println("SubReactor: submitted HttpWorker for " + socketChannel.getRemoteAddress());
-                        long toc = System.currentTimeMillis();
-                        System.out.println("SubReactor: request submitted in " + (toc-tic) + " ms, " + toc);
                     }
 
                     selectionKeys.remove();
