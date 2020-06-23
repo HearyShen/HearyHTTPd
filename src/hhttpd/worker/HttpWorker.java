@@ -1,6 +1,7 @@
 package hhttpd.worker;
 
 import hhttpd.processor.GetProcessor;
+import hhttpd.processor.HeadProcessor;
 import hhttpd.resolver.RequestLine;
 import hhttpd.resolver.RequestLineResolver;
 import hhttpd.responser.ForbiddenResponser;
@@ -74,6 +75,9 @@ public class HttpWorker implements Runnable{
             if (requestLine.getMethod().equals("GET") && requestLine.getProtocolAndVersion().startsWith("HTTP/1.")) {
                 // HTTP GET
                 GetProcessor.handle(webRoot, socketChannel, byteBuffer, requestMessage, requestLine);
+            } else if (requestLine.getMethod().equals("HEAD")) {
+                // HTTP HEAD
+                HeadProcessor.handle(webRoot, socketChannel, byteBuffer, requestMessage, requestLine);
             } else {
                 // not supported
                 ForbiddenResponser.response(socketChannel, byteBuffer);
