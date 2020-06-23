@@ -1,9 +1,7 @@
 package hhttpd.processor;
 
 import hhttpd.resolver.RequestLine;
-import hhttpd.responser.BinaryResponser;
 import hhttpd.responser.NotFoundResponser;
-import hhttpd.responser.TextResponser;
 import hhttpd.utils.ContentTypeDict;
 
 import java.io.File;
@@ -18,11 +16,11 @@ public class HeadProcessor {
                               ByteBuffer byteBuffer,
                               String message,
                               RequestLine requestLine) throws IOException {
-        File localFile = Path.of(webRoot, requestLine.getPath()).toFile();
+        File localFile = Path.of(webRoot, requestLine.getUri().getPath()).toFile();
 
         if (localFile.isDirectory()) {
             // request index.html as default
-            localFile = Path.of(webRoot, requestLine.getPath(), "index.html").toFile();
+            localFile = Path.of(webRoot, requestLine.getUri().getPath(), "index.html").toFile();
         }
 
         if (localFile.isFile()) {

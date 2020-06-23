@@ -2,11 +2,13 @@ package hhttpd.worker;
 
 import hhttpd.processor.GetProcessor;
 import hhttpd.processor.HeadProcessor;
+import hhttpd.processor.PostProcessor;
 import hhttpd.resolver.RequestLine;
 import hhttpd.resolver.RequestLineResolver;
 import hhttpd.responser.ForbiddenResponser;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
@@ -70,14 +72,25 @@ public class HttpWorker implements Runnable{
 
         // resolve request line and dispatch to corresponding processor
         int requestLineEnd = requestMessage.indexOf("\r\n");
-        RequestLine requestLine = RequestLineResolver.resolve(requestMessage.substring(0, requestLineEnd));
+        RequestLine requestLine = null;
         try {
-            if (requestLine.getMethod().equals("GET") && requestLine.getProtocolAndVersion().startsWith("HTTP/1.")) {
+            requestLine = RequestLineResolver.resolve(requestMessage.substring(0, requestLineEnd));
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        String requestMethod = requestLine.getMethod();
+        try {
+            if (requestMethod.equals("GET") && requestLine.getProtocolAndVersion().startsWith("HTTP/1.")) {
                 // HTTP GET
                 GetProcessor.handle(webRoot, socketChannel, byteBuffer, requestMessage, requestLine);
-            } else if (requestLine.getMethod().equals("HEAD")) {
+            } else if (requestMethod.equals("HEAD")) {
                 // HTTP HEAD
                 HeadProcessor.handle(webRoot, socketChannel, byteBuffer, requestMessage, requestLine);
+            } else if (requestMethod.equals("POST")) {
+                // HTTP POST
+                PostProcessor.handle(webRoot, socketChannel, byteBuffer, requestMessage, requestLine);
             } else {
                 // not supported
                 ForbiddenResponser.response(socketChannel, byteBuffer);
@@ -86,7 +99,7 @@ public class HttpWorker implements Runnable{
             long toc = System.currentTimeMillis();
             // status
             System.out.println("HttpWorker: completed "
-                    + requestLine.getMethod() + " " + requestLine.getPath() + " " + requestLine.getProtocolAndVersion()
+                    + requestLine.getMethod() + " " + requestLine.getUri() + " " + requestLine.getProtocolAndVersion()
                     + " from " + socketChannel.getRemoteAddress()
                     + " in " + (toc-tic) + " ms, " + toc
             );

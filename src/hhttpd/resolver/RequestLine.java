@@ -1,25 +1,21 @@
 package hhttpd.resolver;
 
-import java.util.Map;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class RequestLine {
     private String method;
-    private String path;
-    private Map<String, String> querys;
+    private URI uri;
     private String protocolAndVersion;
 
-    public RequestLine(String method, String path, String protocolAndVersion) {
+    public RequestLine(String method, URI uri, String protocolAndVersion) {
         this.method = method;
-        this.path = path;
-        this.querys = null;
+        this.uri = uri;
         this.protocolAndVersion = protocolAndVersion;
     }
 
-    public RequestLine(String method, String path, Map<String, String> querys, String protocolAndVersion) {
-        this.method = method;
-        this.path = path;
-        this.querys = querys;
-        this.protocolAndVersion = protocolAndVersion;
+    public RequestLine(String method, String uriString, String protocolAndVersion) throws URISyntaxException {
+        this(method, new URI(uriString), protocolAndVersion);
     }
 
     public String getMethod() {
@@ -30,12 +26,12 @@ public class RequestLine {
         this.method = method;
     }
 
-    public String getPath() {
-        return path;
+    public URI getUri() {
+        return uri;
     }
 
-    public void setPath(String path) {
-        this.path = path;
+    public void setUri(URI uri) {
+        this.uri = uri;
     }
 
     public String getProtocolAndVersion() {
@@ -46,11 +42,5 @@ public class RequestLine {
         this.protocolAndVersion = protocolAndVersion;
     }
 
-    public Map<String, String> getQuerys() {
-        return querys;
-    }
 
-    public void setQuerys(Map<String, String> querys) {
-        this.querys = querys;
-    }
 }
