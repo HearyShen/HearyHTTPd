@@ -72,25 +72,20 @@ public class HttpWorker implements Runnable{
 
         // resolve request line and dispatch to corresponding processor
         int requestLineEnd = requestMessage.indexOf("\r\n");
-        RequestLine requestLine = null;
         try {
-            requestLine = RequestLineResolver.resolve(requestMessage.substring(0, requestLineEnd));
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-            return;
-        }
+            RequestLine requestLine = RequestLineResolver.resolve(requestMessage.substring(0, requestLineEnd));
+            String requestMethod = requestLine.getMethod();
 
-        String requestMethod = requestLine.getMethod();
-        try {
             if (requestMethod.equals("GET") && requestLine.getProtocolAndVersion().startsWith("HTTP/1.")) {
                 // HTTP GET
                 GetProcessor.handle(webRoot, socketChannel, byteBuffer, requestMessage, requestLine);
+//                GetProcessor.handle("demoCmd", "demoCgiPath", socketChannel, byteBuffer, requestMessage, requestLine);
             } else if (requestMethod.equals("HEAD")) {
                 // HTTP HEAD
                 HeadProcessor.handle(webRoot, socketChannel, byteBuffer, requestMessage, requestLine);
             } else if (requestMethod.equals("POST")) {
                 // HTTP POST
-                PostProcessor.handle(webRoot, socketChannel, byteBuffer, requestMessage, requestLine);
+                PostProcessor.handle("demoCmd", "demoCgiPath", socketChannel, byteBuffer, requestMessage, requestLine);
             } else {
                 // not supported
                 ForbiddenResponser.response(socketChannel, byteBuffer);
@@ -107,7 +102,7 @@ public class HttpWorker implements Runnable{
             // close socket channel after responding
 //            System.out.println("HttpWorker [" + this.id + "]: finished responsing requests from " + socketChannel.getRemoteAddress());
             socketChannel.close();
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException | URISyntaxException e) {
             e.printStackTrace();
         }
     }
