@@ -29,7 +29,7 @@ The structure can be described as below:
 
 hhttpd is developed with JDK11.
 
-hhttpd can compiled and launched with the following commands:
+hhttpd can be compiled and launched with the following commands:
 
 ```bash
 cd src
