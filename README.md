@@ -7,6 +7,10 @@ An experimental Reactor HTTP server written in Java.
 
 For high efficiency, hhttpd applies NIO and non-blocking selecting method to save waiting time and mapping file into memory to speed up I/O.
 
+hhttpd supports HTTP GET, HEAD and POST method.
+
+hhttpd can handle requests for static resources and dynamic CGI.
+
 The structure can be described as below:
 
 - MainReactor (single thread)
@@ -18,13 +22,18 @@ The structure can be described as below:
       - NotFoundResponser
       - etc.
     - PostProcesser
+      - BytesResponser
     - etc.
 
-## Usage
+## Run
 
-hhttpd can be launched with simply the following command after compiling:
+hhttpd is developed with JDK11.
+
+hhttpd can compiled and launched with the following commands:
 
 ```bash
-java -classpath D:\Codes\Java\HearyHTTPd\out\production\HearyHTTPd hhttpd.launcher.Launcher
+cd src
+javac hhttpd/launcher/Launcher.java
+java hhttpd.launcher.Launcher
 ```
 
