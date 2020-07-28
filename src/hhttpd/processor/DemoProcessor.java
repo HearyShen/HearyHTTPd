@@ -6,8 +6,8 @@ import java.nio.charset.StandardCharsets;
 public class DemoProcessor {
     public static void handle(InputStream input, OutputStream output) throws IOException {
         System.out.println("Process new http request...");
-        var reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
-        var writer = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
         // 读取HTTP请求:
         boolean requestOk = false;
         String first = reader.readLine();
