@@ -14,6 +14,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
 public class GetProcessor {
+    /**
+     * Handle GET requests with static resources
+     *
+     * @param webRoot root path of static resources
+     * @param socketChannel socketChannel with client
+     * @param byteBuffer byteBuffer for NIO
+     * @param message HTTP request message
+     * @param requestLine HTTP request line
+     * @throws IOException response may fail
+     */
     public static void handle(String webRoot,
                               SocketChannel socketChannel,
                               ByteBuffer byteBuffer,
