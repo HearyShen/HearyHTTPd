@@ -14,6 +14,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
 public class GetProcessor {
+
+    private static final String testResp = "Hello, world!";
+
     /**
      * Handle GET requests with static resources
      *
@@ -50,6 +53,33 @@ public class GetProcessor {
             // if file not exists
             NotFoundResponser.response(socketChannel, byteBuffer);
         }
+    }
+
+    public static void handleTest(
+                              SocketChannel socketChannel,
+                              ByteBuffer byteBuffer) throws IOException {
+//        File localFile = Path.of(webRoot, requestLine.getUri().getPath()).toFile();
+//
+//        if (localFile.isDirectory()) {
+//            // request index.html as default
+//            localFile = Path.of(webRoot, requestLine.getUri().getPath(), "index.html").toFile();
+//        }
+//
+//        if (localFile.isFile()) {
+//            String contentType = ContentTypeDict.getContentType(localFile.getName());
+//            // if file exists
+//            if (contentType.startsWith("text/")) {
+//                // text file
+//                TextResponser.response(socketChannel, byteBuffer, localFile);
+//            } else {
+//                // binary data file
+//                BinaryResponser.response(socketChannel, byteBuffer, localFile);
+//            }
+//        } else {
+//            // if file not exists
+//            NotFoundResponser.response(socketChannel, byteBuffer);
+//        }
+        BytesResponser.response(socketChannel, byteBuffer, testResp.getBytes());
     }
 
     /**

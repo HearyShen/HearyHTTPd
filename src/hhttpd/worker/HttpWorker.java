@@ -29,7 +29,7 @@ public class HttpWorker implements Runnable{
 
     @Override
     public void run() {
-        long tic = System.currentTimeMillis();
+//        long tic = System.currentTimeMillis();
 //        try {
 //            System.out.println("HttpWorker [" + this.id + "]: starts working on socketChannel from " + socketChannel.getRemoteAddress());
 //        } catch (IOException e) {
@@ -78,8 +78,9 @@ public class HttpWorker implements Runnable{
 
             if (requestMethod.equals("GET") && requestLine.getProtocolAndVersion().startsWith("HTTP/1.")) {
                 // HTTP GET
-                GetProcessor.handle(webRoot, socketChannel, byteBuffer, requestMessage, requestLine);
+//                GetProcessor.handle(webRoot, socketChannel, byteBuffer, requestMessage, requestLine);
 //                GetProcessor.handle("demoCmd", "demoCgiPath", socketChannel, byteBuffer, requestMessage, requestLine);
+                GetProcessor.handleTest(socketChannel, byteBuffer);
             } else if (requestMethod.equals("HEAD")) {
                 // HTTP HEAD
                 HeadProcessor.handle(webRoot, socketChannel, byteBuffer, requestMessage, requestLine);
@@ -91,13 +92,13 @@ public class HttpWorker implements Runnable{
                 ForbiddenResponser.response(socketChannel, byteBuffer);
             }
 
-            long toc = System.currentTimeMillis();
+//            long toc = System.currentTimeMillis();
             // status
-            System.out.println("HttpWorker: completed "
-                    + requestLine.getMethod() + " " + requestLine.getUri() + " " + requestLine.getProtocolAndVersion()
-                    + " from " + socketChannel.getRemoteAddress()
-                    + " in " + (toc-tic) + " ms, " + toc
-            );
+//            System.out.println("HttpWorker: completed "
+//                    + requestLine.getMethod() + " " + requestLine.getUri() + " " + requestLine.getProtocolAndVersion()
+//                    + " from " + socketChannel.getRemoteAddress()
+//                    + " in " + (toc-tic) + " ms, " + toc
+//            );
 
             // close socket channel after responding
 //            System.out.println("HttpWorker [" + this.id + "]: finished responsing requests from " + socketChannel.getRemoteAddress());

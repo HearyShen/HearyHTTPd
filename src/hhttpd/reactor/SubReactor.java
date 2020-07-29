@@ -9,8 +9,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * A SubReactor take accepted request sockets from working queue and handle them.
@@ -23,7 +22,14 @@ public class SubReactor implements Runnable{
 
     public SubReactor(String webRoot) throws IOException {
         this.selector = Selector.open();
-        this.executorService = Executors.newFixedThreadPool(8);
+
+        int localProcessorCount = Runtime.getRuntime().availableProcessors();
+        this.executorService = Executors.newFixedThreadPool(localProcessorCount*2);
+//        this.executorService = new ThreadPoolExecutor(localProcessorCount * 2,
+//                localProcessorCount * 2,
+//                0L,
+//                TimeUnit.MILLISECONDS,
+//                new ArrayBlockingQueue<Runnable>(10000));
         this.webRoot = webRoot;
     }
 
