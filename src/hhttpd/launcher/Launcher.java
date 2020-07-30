@@ -11,7 +11,7 @@ import java.io.IOException;
  */
 public class Launcher {
 
-    public static final int defaultBacklog = 100;
+    public static final int defaultBacklog = 1000;
 
     private final MainReactor mainReactor;
     private final SubReactor subReactor;

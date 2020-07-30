@@ -25,6 +25,7 @@ public class SubReactor implements Runnable{
 
         int localProcessorCount = Runtime.getRuntime().availableProcessors();
         this.executorService = Executors.newFixedThreadPool(localProcessorCount*2);
+//        this.executorService = Executors.newCachedThreadPool();
 //        this.executorService = new ThreadPoolExecutor(localProcessorCount * 2,
 //                localProcessorCount * 2,
 //                0L,
