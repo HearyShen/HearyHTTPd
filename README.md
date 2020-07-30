@@ -66,6 +66,6 @@ For full details, please refer to my [blog](https://heary.cn/posts/HTTP服务器
 
 - Develop a cache module for responses.
   - Cache valid and invalid, string and bytes responses in memory to avoid disk I/O;
-  - Perhaps develop a LRU cached with `LinkedHashMap` and a daemon thread to remove out-of-date caches.
+  - Perhaps develop an LRU cache with `LinkedHashMap` and a daemon thread to remove out-of-date caches.
 - Implementing more HTTP features can be an option.
 
