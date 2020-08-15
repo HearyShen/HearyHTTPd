@@ -15,7 +15,17 @@ import java.nio.file.Path;
 
 public class GetProcessor {
 
-    private static final String testResp = "Hello, world!";
+    private static final String testResp = "HTTP/1.0 200 OK\r\n"
+            + "Connection: close\r\n"
+            + "Content-Type: text/html\r\n"
+            + "\r\n"
+            + "<!DOCTYPE html>"
+            + "<html>"
+            + "<head><title>HearyHTTPd</title></head>"
+            + "<body><h1>Welcome to HearyHTTPd</h1><p>This is the test page of HearyHTTPd.</p></body>"
+            + "</html>";
+
+    private static final byte[] testRespBytes = testResp.getBytes(StandardCharsets.UTF_8);
 
     /**
      * Handle GET requests with static resources
@@ -55,35 +65,22 @@ public class GetProcessor {
         }
     }
 
+    /**
+     * Handle request with test page.
+     *
+     * @param socketChannel
+     * @param byteBuffer
+     * @throws IOException
+     */
     public static void handleTest(
                               SocketChannel socketChannel,
                               ByteBuffer byteBuffer) throws IOException {
-//        File localFile = Path.of(webRoot, requestLine.getUri().getPath()).toFile();
-//
-//        if (localFile.isDirectory()) {
-//            // request index.html as default
-//            localFile = Path.of(webRoot, requestLine.getUri().getPath(), "index.html").toFile();
-//        }
-//
-//        if (localFile.isFile()) {
-//            String contentType = ContentTypeDict.getContentType(localFile.getName());
-//            // if file exists
-//            if (contentType.startsWith("text/")) {
-//                // text file
-//                TextResponser.response(socketChannel, byteBuffer, localFile);
-//            } else {
-//                // binary data file
-//                BinaryResponser.response(socketChannel, byteBuffer, localFile);
-//            }
-//        } else {
-//            // if file not exists
-//            NotFoundResponser.response(socketChannel, byteBuffer);
-//        }
-        BytesResponser.response(socketChannel, byteBuffer, testResp.getBytes());
+        BytesResponser.response(socketChannel, byteBuffer, testRespBytes);
     }
 
     /**
      * Handle request with CGI
+     *
      * @param commands commands to execute
      * @param cgiPath path of cgi file
      * @param socketChannel socketChannel with client
@@ -119,7 +116,6 @@ public class GetProcessor {
         StringBuilder stringBuilder = new StringBuilder();
         String line = bufferedReader.readLine();
         while (line != null) {
-//            System.out.println(line);
             stringBuilder.append(line).append("\r\n");
             line = bufferedReader.readLine();
         }
